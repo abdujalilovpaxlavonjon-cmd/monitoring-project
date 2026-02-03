@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agri-food-api
+  labels:
+    app: agri-food-api
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: agri-food-api
+  template:
+    metadata:
+      labels:
+        app: agri-food-api
+    spec:
+      containers:
+        - name: agri-food-api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          

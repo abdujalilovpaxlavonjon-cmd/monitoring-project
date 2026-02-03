@@ -1,0 +1,29 @@
+image:
+  repository: agri-food-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80          # Service port (K8s ichida)
+  targetPort: 8080  # Container port (Node app 8080)
+
+# Agar chartingda ingress bo'lsa
+ingress:
+  enabled: false
+
+resources: {}
+
+metrics:
+  enabled: true
+  # Prometheus / ServiceMonitor uchun
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 15s
+    path: /metrics
+    portName: http   # service port name bilan mos bo‘lishi kerak
+    additionalLabels:
+      release: kube-prometheus-stack
