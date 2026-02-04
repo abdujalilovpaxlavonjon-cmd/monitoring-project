@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: aqll/agri-food-api
-  tag: latest
+  tag: 3959762
   pullPolicy: IfNotPresent
 
 nameOverride: ""
