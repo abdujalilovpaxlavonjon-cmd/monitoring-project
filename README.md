@@ -8,6 +8,7 @@ source code → Docker image → CI pipeline → GitOps deployment → monitorin
 ---
 
 ## 🏗️ System Architecture
+![Uploading image.png…]()
 
 ![System Overview](docs/images/argocd-app.png)
 
