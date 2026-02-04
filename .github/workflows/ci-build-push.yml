@@ -8,6 +8,15 @@ on:
       - "package.json"
       - "Dockerfile"
       - "helm/**"
+      - ".github/workflows/ci-build-push.yml"
+
+# MUHIM: workflow repo'ga push qilishi uchun
+permissions:
+  contents: write
+
+concurrency:
+  group: ci-build-push-update-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build_push_update:
@@ -16,6 +25,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -28,7 +40,8 @@ jobs:
 
       - name: Generate image tag (short sha)
         id: vars
-        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -40,19 +53,45 @@ jobs:
             aqll/agri-food-api:latest
 
       - name: Update Helm values.yaml image tag
-        run: |
-          sed -i "s/tag: .*/tag: ${TAG}/" helm/agri-food-api/values.yaml
+        shell: bash
         env:
           TAG: ${{ steps.vars.outputs.TAG }}
+        run: |
+          FILE="helm/agri-food-api/values.yaml"
+          if [ ! -f "$FILE" ]; then
+            echo "ERROR: $FILE not found" && exit 1
+          fi
+
+          # faqat image: blok ichidagi tag: ni almashtiramiz
+          awk -v tag="$TAG" '
+            BEGIN{in_image=0}
+            /^image:/{in_image=1; print; next}
+            in_image==1 && /^[^[:space:]]/{in_image=0}
+            in_image==1 && $1 ~ /^tag:/{sub($0,"  tag: "tag); print; next}
+            {print}
+          ' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+
+          echo "Updated tag to $TAG in $FILE"
+          grep -n "image:\|tag:" -n "$FILE" | head -n 20 || true
 
       - name: Commit changes
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add helm/agri-food-api/values.yaml
-          git commit -m "ci: update image tag to ${TAG}" || echo "No changes to commit"
+        shell: bash
         env:
           TAG: ${{ steps.vars.outputs.TAG }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add helm/agri-food-api/values.yaml
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "ci: update image tag to ${TAG} [skip ci]"
 
       - name: Push changes
-        run: git push
+        shell: bash
+        run: |
+          git push origin HEAD:main
