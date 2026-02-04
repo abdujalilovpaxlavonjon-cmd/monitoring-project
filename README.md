@@ -1,124 +1,128 @@
-# 🌾 Agri Food Platform – End-to-End DevOps & Observability Project
+# 🌾 Agriculture Platform – End-to-End DevOps & Observability Project
 
-This repository demonstrates a **production-ready DevOps pipeline** with full CI/CD automation, GitOps deployment, and a complete observability stack running on Kubernetes.
-
-The project covers the **entire lifecycle**:  
-source code → Docker image → CI pipeline → GitOps deployment → monitoring & logging.
+This repository demonstrates a **production-ready DevOps project** that covers the full lifecycle:
+**CI → Docker → GitOps → Kubernetes → Monitoring & Logging**.
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture Overview
 
+The platform is deployed on Kubernetes and follows GitOps principles using ArgoCD.
 
-![System Overview](docs/images/argocd-app.png)
+![System Architecture](argocd-app.png)
 
-### Technologies Used
+---
 
-- **Application:** Node.js (REST API with `/metrics`)
+## ⚙️ Technologies Used
+
+- **Application:** Node.js (Agri-Food API)
 - **Containerization:** Docker
-- **CI:** GitHub Actions
-- **CD / GitOps:** Argo CD
-- **Orchestration:** Kubernetes (Docker Desktop / Minikube)
-- **Monitoring:** Prometheus & Grafana
-- **Logging:** Grafana Loki
-- **Metrics Scraping:** Prometheus Operator + ServiceMonitor
+- **CI/CD:** GitHub Actions
+- **Image Registry:** Docker Hub
+- **Orchestration:** Kubernetes
+- **GitOps CD:** ArgoCD
+- **Monitoring:** Prometheus
+- **Visualization:** Grafana
+- **Logging:** Loki
+- **Alerting:** Alertmanager
 
 ---
 
-## 🔄 1. Continuous Integration (CI)
+## 🔄 Continuous Integration – GitHub Actions
 
-![GitHub Actions](docs/images/ci-github-actions.png)
+Every push to the `main` branch triggers a CI pipeline that:
 
-CI is fully automated using **GitHub Actions**.
+1. Builds a Docker image  
+2. Pushes the image to Docker Hub  
+3. Updates Helm `values.yaml` with a new image tag  
+4. Commits changes back to the repository  
 
-### What happens on every push to `main`:
-
-1. Source code is checked out
-2. Docker image is built
-3. Image is pushed to Docker Hub
-4. Image tag is updated automatically in Helm `values.yaml`
-5. Changes are committed back to the repository
-
-📦 **Docker image repository:**
-
- 
-![Docker Hub Image](docs/images/dockerhub-image.png)
+![CI Pipeline](ci-github-actions.png)
 
 ---
 
-## ☸️ 2. GitOps Continuous Deployment (CD)
+## 🐳 Docker Image Repository
 
-![ArgoCD Application](docs/images/argocd-app.png)
+The application image is automatically built and pushed to Docker Hub.
 
-Deployment is handled using **GitOps principles** with Argo CD.
-
-### Key points:
-
-- Git repository is the **single source of truth**
-- Argo CD continuously watches the Helm chart
-- Any Git change is **automatically synchronized** to the cluster
-- Full deployment history & rollback support
-
-📍 **Namespace:** `apps`  
-📍 **Chart path:** `helm/agri-food-api`
+![Docker Hub Image](dockerhub-image.png)
 
 ---
 
-## 📊 3. Monitoring with Prometheus & Grafana
+## ☸️ GitOps Deployment with ArgoCD
 
-### 🔍 Prometheus Targets
+ArgoCD continuously monitors the Git repository and synchronizes Kubernetes manifests automatically.
 
-![Prometheus Targets](docs/images/prometheus-targets.png)
+- Git is the **single source of truth**
+- Automatic sync & drift detection
+- Rollback supported
 
-- Application metrics are exposed via `/metrics`
-- Prometheus scrapes metrics using `ServiceMonitor`
-- Targets are healthy and actively scraped
+![ArgoCD Application](argocd-app.png)
 
 ---
 
-### 📈 Grafana Dashboards
+## 📊 Monitoring – Grafana Dashboards
 
-![Grafana Dashboard](docs/images/grafana-dashboard.png)
+Grafana visualizes real-time metrics collected by Prometheus.
 
-Dashboards provide real-time insights into:
-
+Key metrics:
 - CPU usage
 - Memory consumption
-- Request rate
-- Pod-level metrics
-- Cluster health
+- Pod health
+- Node health
+- Application performance
+
+![Grafana Dashboard](grafana-dashboard.png)
 
 ---
 
-## 🧾 4. Centralized Logging with Loki
+## 📈 Prometheus Targets
 
-![Grafana Logs](docs/images/grafana-logs.png)
+Prometheus successfully scrapes metrics from:
+- Application pods
+- Node Exporter
+- Kubernetes components
 
-- Logs from application pods are collected via Promtail
-- Stored and queried using Grafana Loki
-- Enables fast debugging and log correlation with metrics
+![Prometheus Targets](prometheus-targets.png)
 
 ---
 
-## 📂 Project Structure
+## 🪵 Centralized Logging – Grafana Loki
 
-```text
+All application and system logs are collected and queried centrally using Loki.
+
+- Namespace-level logs
+- Pod-level filtering
+- Fast troubleshooting
+
+![Grafana Logs](grafana-logs.png)
+
+---
+
+## 🚀 How to Run Locally
+
+```bash
+# Start Kubernetes cluster
+minikube start
+
+# Deploy monitoring stack
+helm install monitoring prometheus-community/kube-prometheus-stack
+
+# Access Grafana
+kubectl port-forward svc/monitoring-grafana -n monitoring 3000:80
+
+📂 Repository Structure
+
 monitoring-project/
-├── .github/
-│   └── workflows/
-│       └── ci-build-push.yml        # CI pipeline (build, push, update Helm)
-├── docs/
-│   └── images/                      # README screenshots
-├── helm/
-│   └── agri-food-api/               # Helm chart
-│       ├── templates/
-│       │   ├── deployment.yaml
-│       │   ├── service.yaml
-│       │   └── servicemonitor.yaml
-│       └── values.yaml
-├── src/
-│   └── index.js                     # Application source code
-├── Dockerfile
-├── package.json
-├── kube-prometheus-stack-values.yaml
-└── node-exporter-values.yaml
+├── .github/workflows/        # CI pipelines
+├── helm/agri-food-api/       # Helm chart for application
+├── src/                      # Application source code
+├── docs/                     # Documentation
+├── Dockerfile                # App container build
+├── README.md                 # Project documentation
+├── argocd-app.png            # ArgoCD application
+├── ci-github-actions.png     # CI pipeline screenshot
+├── dockerhub-image.png       # Docker Hub image
+├── grafana-dashboard.png     # Grafana dashboard
+├── grafana-logs.png          # Loki logs
+└── prometheus-targets.png    # Prometheus targets
